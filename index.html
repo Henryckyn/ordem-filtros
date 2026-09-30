@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordem de Retirada de Filtros - Sodexo</title>
+    <!-- HTML2PDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="main-grid">
+        <!-- Painel Lateral de Lançamento -->
+        <div class="card no-print">
+            <div class="card-title">1. Dados de Autorização e Saída</div>
+            <form id="authForm">
+                <div class="form-group">
+                    <label>Autorizado Por (Gestor/Supervisor)</label>
+                    <input type="text" id="autorizadoPor" value="Fernando Alves Pereira" oninput="updateHeaderInfo()">
+                </div>
+                <div class="form-group">
+                    <label>Retirado Por (Técnico/Motorista)</label>
+                    <input type="text" id="retiradoPor" value="" placeholder="Digite o nome de quem retirou..." oninput="updateHeaderInfo()">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Número de Registro</label>
+                        <input type="text" id="numRegistro" placeholder="Ex: 34920" oninput="updateHeaderInfo()">
+                    </div>
+                    <div class="form-group">
+                        <label>Nº Sequencial da Guia</label>
+                        <input type="text" id="numGuia" readonly style="background-color: #1e293b; color: #38bdf8; font-weight: bold; cursor: not-allowed;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Observação Geral / Finalidade</label>
+                    <input type="text" id="obsGeral" placeholder="Ex: Manutenção preventiva programada" oninput="updateHeaderInfo()">
+                </div>
+            </form>
+
+            <div class="card-title" style="margin-top: 20px;">2. Adicionar Filtro / Medida</div>
+            <form id="filterForm">
+                <div class="form-group">
+                    <label>Código / Tag do Item</label>
+                    <input type="text" id="codigo" placeholder="Ex: FLT-G4-592" required>
+                </div>
+                <div class="form-group">
+                    <label>Especificações / Modelo</label>
+                    <input type="text" id="spec" placeholder="Ex: Filtro Bolsas F7 Sintético" required>
+                </div>
+                <div class="form-group">
+                    <label>Medida (Dimensões)</label>
+                    <input type="text" id="medida" placeholder="Ex: 592x592x380 mm" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Qtd</label>
+                        <input type="number" id="qtd" min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Unidade</label>
+                        <select id="unidade">
+                            <option value="UN">UN</option>
+                            <option value="CX">CX</option>
+                            <option value="RL">RL</option>
+                            <option value="PC">PC</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- DESTINO ESPECÍFICO DESTE FILTRO / MEDIDA -->
+                <div class="form-group" style="background-color: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid #1e293b;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label style="color: #38bdf8; font-weight: bold; margin-bottom: 0;">Destino deste Filtro</label>
+                        <button type="button" class="btn-secondary" onclick="repeatLastDest()">Copiar Anterior</button>
+                    </div>
+                    <div class="form-row" style="margin-top: 8px;">
+                        <div>
+                            <label style="font-size: 0.68rem;">Casa(s)</label>
+                            <input type="text" id="itemCasa" placeholder="Ex: 01 ou 0">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.68rem;">FCU(s)</label>
+                            <input type="text" id="itemFCU" placeholder="Ex: 06 ou 1 a 4">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Condição do Item</label>
+                    <select id="condicao">
+                        <option value="Novo / Lacrado">Novo / Lacrado</option>
+                        <option value="Seminovo / Reserva">Seminovo / Reserva</option>
+                        <option value="Para Substituição/Avaria">Para Substituição/Avaria</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">+ Adicionar Filtro</button>
+            </form>
+        </div>
+
+        <!-- Visualização da Guia de Retirada (PDF) -->
+        <div>
+            <div class="actions-bar no-print">
+                <button class="btn btn-danger" onclick="resetCounter()">Resetar Sequência</button>
+                <button class="btn btn-danger" onclick="clearItems()">Limpar Lista</button>
+                <button class="btn btn-success" style="width: auto; padding: 8px 16px;" onclick="generatePDF()">📄 Baixar Guia de Retirada (PDF)</button>
+            </div>
+
+            <div id="documentArea">
+                <!-- Cabeçalho -->
+                <div class="doc-header">
+                    <h1>Ordem de Retirada de Filtros</h1>
+                    <div class="brand-logo-bg">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/5b/Sodexo_logo.svg" alt="Sodexo" class="brand-logo">
+                    </div>
+                </div>
+
+                <!-- Caixa de Informações de Autorização -->
+                <div class="auth-box">
+                    <div class="info-item">
+                        <span class="info-label">Nº Guia de Saída</span>
+                        <span class="info-value" id="lblGuia" style="color: #0284c7;">GR-2026-0001</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Autorizado Por</span>
+                        <span class="info-value" id="lblAutorizado">Fernando Alves Pereira</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Data / Hora de Saída</span>
+                        <span class="info-value" id="lblDataHora">--/--/---- --:--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Retirado Por</span>
+                        <span class="info-value" id="lblRetirado">---</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Nº de Registro</span>
+                        <span class="info-value" id="lblRegistro">---</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Observação</span>
+                        <span class="info-value" id="lblObs">---</span>
+                    </div>
+                </div>
+
+                <!-- Quadrante de Itens Retirados -->
+                <div class="quadrant-title">Relação de Filtros por Medida e Destino</div>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 14%;">Código/Tag</th>
+                            <th style="width: 18%;">Medida</th>
+                            <th style="width: 25%;">Especificações / Modelo</th>
+                            <th class="center" style="width: 6%;">Qtd</th>
+                            <th class="center" style="width: 6%;">Un.</th>
+                            <th style="width: 18%;">Destino (Casa / FCU)</th>
+                            <th style="width: 13%;">Condição</th>
+                            <th class="center no-print" style="width: 5%;">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody">
+                        <!-- Itens entram aqui -->
+                    </tbody>
+                </table>
+
+                <!-- Total de Peças e Volume -->
+                <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 25px; text-align: right; color: #334155;">
+                    TOTAL DE VOLUMES / PEÇAS AUTORIZADAS: <span id="lblTotalPecas" style="color: #0284c7; font-size: 1rem;">0</span>
+                </div>
+
+                <!-- Assinaturas de Conferência -->
+                <div class="signatures-grid">
+                    <div class="signature-line">
+                        Assinatura do Almoxarifado / Liberação
+                    </div>
+                    <div class="signature-line">
+                        Assinatura de Quem Retirou (Recebedor)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
